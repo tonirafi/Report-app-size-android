@@ -48,25 +48,19 @@ python3 apk_size_report.py <path-ke-apk> [OPTIONS]
 
 ## Contoh
 
-1. **Cetak summary & tabel ke console**:
-
-   ```bash
-   python3 apk_size_report.py app-release.apk
-   ```
-
-2. **Generate mapping modul**:
+1. **Generate mapping modul**:
 
    ```bash
    python3 apk_size_report.py app-release.apk --gen
    ```
 
-3. **Simpan laporan Markdown**:
+2. **Simpan laporan Markdown**:
 
    ```bash
    python3 apk_size_report.py app-release.apk --md report.md
    ```
 
-4. **Simpan laporan Excel & CSV**:
+3. **Simpan laporan Excel & CSV**:
 
    ```bash
    python3 apk_size_report.py app-release.apk --excel size_report.xlsx --csv size_report.csv
