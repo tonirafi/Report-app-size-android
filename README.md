@@ -57,7 +57,7 @@ python3 apk_size_report.py <path-ke-apk> [OPTIONS]
 2. **Simpan laporan Excel & CSV**:
 
    ```bash
-   python3 apk_size_report.py app_11462.apk --gen --md report_app_size_11462.xlsx
+   python3 apk_size_report.py app_111.apk --gen --md report_app_size_111.xlsx
    ```
 
 ## Struktur Laporan
