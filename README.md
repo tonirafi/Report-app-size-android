@@ -48,17 +48,18 @@ python3 apk_size_report.py <path-ke-apk> [OPTIONS]
 
 ## Contoh
 
-1. **Simpan laporan Markdown**:
+1. **Simpan laporan Excel & CSV**:
+
+   ```bash
+   python3 apk_size_report.py app_111.apk --gen --md report_app_size_111.xlsx
+   ```
+2. **Simpan laporan Markdown**:
 
    ```bash
    python3 apk_size_report.py app-release.apk --md report.md
    ```
 
-2. **Simpan laporan Excel & CSV**:
 
-   ```bash
-   python3 apk_size_report.py app_111.apk --gen --md report_app_size_111.xlsx
-   ```
 
 ## Struktur Laporan
 
