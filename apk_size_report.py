@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import zipfile, argparse, textwrap, sys, csv
+import zipfile, argparse, textwrap, sys, csv, os
 
 # Utility to format bytes to human-readable MB
 def human(bytes_size):
@@ -210,15 +210,67 @@ if __name__ == "__main__":
     # Output
     if args.excel:
         import pandas as pd
-        df=pd.DataFrame(results)
-        for t,v in totals.items(): df=df.append({'Type':'Total','SDK / Feature':t,
-            'Original Install (MB)':f"{v['Original Install (MB)']:.1f} MB",
-            'Original After Decompress (MB)':f"{v['Original After Decompress (MB)']:.1f} MB"},ignore_index=True)
-        df=df.append({'Type':'Total','SDK / Feature':'Keseluruhan',
-            'Original Install (MB)':f"{overall['Original Install (MB)']:.1f} MB",
-            'Original After Decompress (MB)':f"{overall['Original After Decompress (MB)']:.1f} MB"},ignore_index=True)
-        df.to_excel(args.excel,index=False)
-        print(f"✅ Excel saved to {args.excel}")
+
+        # Hapus file Excel lama jika ada
+        if os.path.exists(args.excel):
+            os.remove(args.excel)
+
+        df = pd.DataFrame(results)
+        for t, v in totals.items():
+            df = pd.concat([df, pd.DataFrame([{
+                'Type': 'Total', 'SDK / Feature': t,
+                'Original Install (MB)': f"{v['Original Install (MB)']:.1f} MB",
+                'Original After Decompress (MB)': f"{v['Original After Decompress (MB)']:.1f} MB"
+            }])], ignore_index=True)
+        df = pd.concat([df, pd.DataFrame([{
+            'Type': 'Total', 'SDK / Feature': 'Keseluruhan',
+            'Original Install (MB)': f"{overall['Original Install (MB)']:.1f} MB",
+            'Original After Decompress (MB)': f"{overall['Original After Decompress (MB)']:.1f} MB"
+        }])], ignore_index=True)
+
+        # === Tambahan: detail file App ===
+        z = zipfile.ZipFile(args.apk, 'r')
+        all_files = set(i.filename for i in z.infolist())
+        used_files = set()
+        for patterns in modules.values():
+            for p in patterns:
+                used_files.update(f for f in all_files if f.startswith(p))
+        app_files = sorted(all_files - used_files)
+        app_file_rows = []
+        for f in app_files:
+            info = z.getinfo(f)
+            app_file_rows.append({
+                'File': f,
+                'Compressed Size (B)': int(info.compress_size),
+                'Uncompressed Size (B)': int(info.file_size),
+                'Compressed Size (MB)': f"{info.compress_size/1024/1024:.3f}",
+                'Uncompressed Size (MB)': f"{info.file_size/1024/1024:.3f}"
+            })
+        app_df = pd.DataFrame(app_file_rows)
+        # Urutkan berdasarkan Uncompressed Size (B) terbesar ke terkecil
+        if not app_df.empty:
+            app_df = app_df.sort_values(by='Uncompressed Size (B)', ascending=False)
+
+        # Pastikan tidak ada kolom bertipe object (list/dict)
+        for col in df.columns:
+            if df[col].apply(lambda x: isinstance(x, (list, dict))).any():
+                df[col] = df[col].astype(str)
+        for col in app_df.columns:
+            if app_df[col].apply(lambda x: isinstance(x, (list, dict))).any():
+                app_df[col] = app_df[col].astype(str)
+
+        try:
+            with pd.ExcelWriter(args.excel, engine='openpyxl') as writer:
+                df.to_excel(writer, index=False, sheet_name='Summary')
+                if not app_df.empty:
+                    app_df.to_excel(writer, index=False, sheet_name='App_Detail')
+                else:
+                    # Sheet kosong, tulis satu baris dummy agar Excel tidak error
+                    pd.DataFrame([{'File': 'No data'}]).to_excel(writer, index=False, sheet_name='App_Detail')
+            print(f"✅ Excel saved to {args.excel}")
+            print("Excel writing done, file size:", os.path.getsize(args.excel))
+        except Exception as e:
+            print("❌ Error saat menulis Excel:", e)
     elif args.csv:
         with open(args.csv,'w',newline='') as f:
             w=csv.DictWriter(f,fieldnames=md_cols)
